@@ -50,10 +50,34 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
-// Initialize users database
+// Initialize users database with admin account
 function initDatabase() {
     if (!localStorage.getItem('users')) {
-        localStorage.setItem('users', JSON.stringify({}));
+        // Create admin account
+        const adminUser = {
+            username: ADMIN_USERNAME,
+            email: 'admin@earninghub.com',
+            password: ADMIN_PASSWORD,
+            phone: '08000000000',
+            balance: 0,
+            totalEarnings: 0,
+            referralEarnings: 0,
+            referralLink: `${window.location.origin}?ref=ADMIN`,
+            referralCode: 'ADMIN',
+            referrals: [],
+            completedTasks: [],
+            createdAt: new Date().toISOString(),
+            analytics: {
+                totalClicks: 0,
+                totalReferrals: 0
+            },
+            activity: [],
+            isAdmin: true
+        };
+        
+        const users = {};
+        users[ADMIN_USERNAME] = adminUser;
+        localStorage.setItem('users', JSON.stringify(users));
     }
     if (!localStorage.getItem('currentUser')) {
         localStorage.setItem('currentUser', '');
@@ -150,14 +174,6 @@ function handleLogin(event) {
         return;
     }
 
-    // Check if it's admin login
-    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-        localStorage.setItem('currentUser', username);
-        switchPage('dashboardPage');
-        showNotification('✅ Admin login successful!', 'success');
-        return;
-    }
-
     const users = getAllUsers();
     const user = users[username];
 
@@ -201,6 +217,7 @@ function loadDashboard() {
 // Load Tasks
 function loadTasks() {
     const tasksContainer = document.getElementById('tasksContainer');
+    if (!tasksContainer) return;
     tasksContainer.innerHTML = '';
 
     TASKS.forEach(task => {
@@ -336,7 +353,6 @@ function copyPromotion(text) {
 // Share Promotion
 function sharePromotion(platform) {
     showNotification(`✅ Share on ${platform}!`, 'success');
-    // You can add platform-specific sharing logic here
 }
 
 // Load Analytics
@@ -349,10 +365,15 @@ function loadAnalytics() {
     const avgReward = tasksCompleted > 0 ? Math.floor(user.totalEarnings / tasksCompleted) : 0;
     const conversionRate = analytics.totalClicks > 0 ? Math.floor((analytics.totalReferrals / analytics.totalClicks) * 100) : 0;
 
-    document.getElementById('totalClicks').textContent = analytics.totalClicks || 0;
-    document.getElementById('conversionRate').textContent = conversionRate;
-    document.getElementById('tasksCompleted').textContent = tasksCompleted;
-    document.getElementById('avgReward').textContent = avgReward;
+    const totalClicksEl = document.getElementById('totalClicks');
+    const conversionRateEl = document.getElementById('conversionRate');
+    const tasksCompletedEl = document.getElementById('tasksCompleted');
+    const avgRewardEl = document.getElementById('avgReward');
+
+    if (totalClicksEl) totalClicksEl.textContent = analytics.totalClicks || 0;
+    if (conversionRateEl) conversionRateEl.textContent = conversionRate;
+    if (tasksCompletedEl) tasksCompletedEl.textContent = tasksCompleted;
+    if (avgRewardEl) avgRewardEl.textContent = avgReward;
 
     // Load Activity Timeline
     loadActivityTimeline();
